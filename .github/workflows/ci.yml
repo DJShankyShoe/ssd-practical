@@ -1,0 +1,129 @@
+name: SSD CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  BASE_URL: http://127.0.0.1:8000
+
+jobs:
+  # Q5: dependency check - flag known vulnerabilities in what we pull in.
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Audit Python dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r app/requirements.txt -r tests/requirements.txt
+
+      - name: Scan project and base images with Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+  # Q5: integration testing - the app, nginx and the database together.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Start the stack
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml \
+            up -d --build db app web
+
+      - name: Wait for the app
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf "$BASE_URL/healthz" >/dev/null && exit 0
+            sleep 2
+          done
+          docker compose logs app
+          exit 1
+
+      - name: Run integration tests
+        run: |
+          pip install -r tests/requirements.txt
+          pytest tests/test_integration.py -v
+
+      - name: Verify HTTPS and basic auth through nginx
+        run: |
+          test "$(curl -sk -o /dev/null -w '%{http_code}' https://127.0.0.1)" = "401"
+          test "$(curl -sk -o /dev/null -w '%{http_code}' \
+            -u admin:2400639@sit.singaporetech.edu.sg https://127.0.0.1)" = "200"
+
+      - name: Verify only validated queries are logged to table 2400639
+        run: |
+          rows=$(docker compose exec -T db psql -U ssd -d ssd -tAc \
+            'SELECT count(*) FROM "2400639"')
+          echo "logged rows: $rows"
+          test "$rows" = "1"
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  # Q5: UI testing over HTTP - a real browser driving the form.
+  ui-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Start the stack
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml \
+            up -d --build db app
+
+      - name: Wait for the app
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf "$BASE_URL/healthz" >/dev/null && exit 0
+            sleep 2
+          done
+          docker compose logs app
+          exit 1
+
+      - name: Install test dependencies and browser
+        run: |
+          pip install -r tests/requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run UI tests
+        run: pytest tests/test_ui.py -v --browser chromium
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-output
+          path: test-results/
+          if-no-files-found: ignore
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

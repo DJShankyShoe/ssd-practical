@@ -1,0 +1,7 @@
+# CI-only override. Publishes the app directly on plain HTTP so the test
+# suite can drive it without the self-signed certificate and basic auth
+# getting in the way. Not used by "docker compose up".
+services:
+  app:
+    ports:
+      - "8000:8000"

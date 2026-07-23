@@ -5,3 +5,9 @@ nginx/auth/
 # Local working notes, not part of the deliverable
 instructions.txt
 README.md
+
+# Local test artefacts
+.venv-test/
+test-results/
+.pytest_cache/
+__pycache__/
