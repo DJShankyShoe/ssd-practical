@@ -26,13 +26,18 @@ jobs:
           pip install pip-audit
           pip-audit -r app/requirements.txt -r tests/requirements.txt
 
-      - name: Scan project and base images with Trivy
-        uses: aquasecurity/trivy-action@0.24.0
+      - name: Scan the project with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
+          scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           exit-code: "1"
+          # certs/ holds the runtime-generated self-signed key. It is gitignored
+          # so it is never in a checkout, but skip it so a local run of this
+          # scan does not trip the secret scanner on it.
+          skip-dirs: certs
 
   # Q5: integration testing - the app, nginx and the database together.
   integration:
