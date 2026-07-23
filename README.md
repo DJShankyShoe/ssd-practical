@@ -41,6 +41,23 @@ Git identity configured for this repo:
 - name: `Gangaraju Shashank`
 - email: `2400639@sit.singaporetech.edu.sg`
 
+Gitea login (`admin` is a reserved name in Gitea, so the account is `shashank`):
+
+- username: `shashank`
+- password: `2400639@sit.singaporetech.edu.sg`
+
+This repo is pushed to `http://127.0.0.1:3000/shashank/ssd-practical.git`.
+The remote deliberately stores no credentials - git will prompt on push.
+
+Note: the Gitea account lives in the `gitea-data` volume, so after a
+`docker compose down -v` recreate it with:
+
+```bash
+docker compose exec -u git gitea gitea admin user create \
+  --username shashank --password '2400639@sit.singaporetech.edu.sg' \
+  --email '2400639@sit.singaporetech.edu.sg' --admin --must-change-password=false
+```
+
 ## Actions workflow
 
 `.gitea/workflows/ci.yml` brings the stack up and asserts that the web server
