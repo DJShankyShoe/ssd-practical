@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Search</title>
+</head>
+<body>
+  <h1>Search</h1>
+
+  {% if error %}<p style="color:#b00">{{ error }}</p>{% endif %}
+  <p id="js-error" style="color:#b00"></p>
+
+  <!-- Frontend validation: HTML constraints give the first layer (required,
+       length bounds, allowlist pattern); the script repeats them so we can
+       clear the field on a rejected term. -->
+  <form method="post" action="/" id="search-form">
+    <input type="text" name="q" id="q" autocomplete="off"
+           required minlength="3" maxlength="50"
+           pattern="[A-Za-z0-9]+( [A-Za-z0-9]+)*"
+           title="Letters, digits and single spaces only">
+    <button type="submit">Search</button>
+  </form>
+
+  <script>
+    // Same rules as the server's validate(): allowlist plus length bounds.
+    const ALLOWED = /^[A-Za-z0-9]+( [A-Za-z0-9]+)*$/;
+
+    document.getElementById("search-form").addEventListener("submit", (e) => {
+      const field = document.getElementById("q");
+      const out = document.getElementById("js-error");
+      const term = field.value.trim();
+
+      if (term.length < 3 || term.length > 50) {
+        out.textContent = "Search term must be 3-50 characters.";
+      } else if (!ALLOWED.test(term)) {
+        out.textContent = "Invalid input detected. Letters, digits and single spaces only.";
+      } else {
+        return; // valid, let it submit
+      }
+
+      e.preventDefault();
+      field.value = "";   // clear the input, stay on the home page
+      field.focus();
+    });
+  </script>
+</body>
+</html>
