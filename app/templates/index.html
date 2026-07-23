@@ -10,10 +10,12 @@
   {% if error %}<p style="color:#b00">{{ error }}</p>{% endif %}
   <p id="js-error" style="color:#b00"></p>
 
-  <!-- Frontend validation: HTML constraints give the first layer (required,
-       length bounds, allowlist pattern); the script repeats them so we can
-       clear the field on a rejected term. -->
-  <form method="post" action="/" id="search-form">
+  <!-- novalidate: the browser's own constraint checking would block submit
+       before our handler runs, leaving the rejected term sitting in the box.
+       The requirement is to clear it, so validateTerm() below is the frontend
+       validator. The constraint attributes stay as a declarative record of the
+       same rules. -->
+  <form method="post" action="/" id="search-form" novalidate>
     <input type="text" name="q" id="q" autocomplete="off"
            required minlength="3" maxlength="50"
            pattern="[A-Za-z0-9]+( [A-Za-z0-9]+)*"
@@ -25,20 +27,23 @@
     // Same rules as the server's validate(): allowlist plus length bounds.
     const ALLOWED = /^[A-Za-z0-9]+( [A-Za-z0-9]+)*$/;
 
+    // Frontend validator. Returns an error message, or null if acceptable.
+    function validateTerm(term) {
+      if (!term) return "Please enter a search term.";
+      if (term.length < 3 || term.length > 50)
+        return "Search term must be 3-50 characters.";
+      if (!ALLOWED.test(term))
+        return "Invalid input detected. Letters, digits and single spaces only.";
+      return null;
+    }
+
     document.getElementById("search-form").addEventListener("submit", (e) => {
       const field = document.getElementById("q");
-      const out = document.getElementById("js-error");
-      const term = field.value.trim();
-
-      if (term.length < 3 || term.length > 50) {
-        out.textContent = "Search term must be 3-50 characters.";
-      } else if (!ALLOWED.test(term)) {
-        out.textContent = "Invalid input detected. Letters, digits and single spaces only.";
-      } else {
-        return; // valid, let it submit
-      }
+      const error = validateTerm(field.value.trim());
+      if (!error) return; // valid, let it submit
 
       e.preventDefault();
+      document.getElementById("js-error").textContent = error;
       field.value = "";   // clear the input, stay on the home page
       field.focus();
     });
