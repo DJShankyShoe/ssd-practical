@@ -3,7 +3,12 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+
+# Copy only what the application needs, rather than the whole context, so
+# nothing unexpected can end up inside the image.
+COPY app.py .
+COPY templates ./templates
+COPY static ./static
 
 # Run as a non-root user.
 RUN useradd -m appuser

@@ -1,20 +1,37 @@
 """Integration tests: drive the running app over HTTP and check that the
 backend validation and the result page behave as specified."""
 import os
+import re
 
 import requests
 
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:8000")
 
+CSRF_RE = re.compile(r'name="csrf_token" value="([^"]+)"')
+
 
 def search(term):
-    return requests.post(f"{BASE}/", data={"q": term}, timeout=10)
+    """Submit a term the way the form does: fetch the page for a CSRF token
+    and post it back on the same session."""
+    session = requests.Session()
+    page = session.get(f"{BASE}/", timeout=10)
+    token = CSRF_RE.search(page.text).group(1)
+    return session.post(
+        f"{BASE}/", data={"q": term, "csrf_token": token}, timeout=10
+    )
 
 
 def test_home_page_serves_the_form():
     r = requests.get(f"{BASE}/", timeout=10)
     assert r.status_code == 200
     assert 'name="q"' in r.text
+    assert CSRF_RE.search(r.text), "form should carry a CSRF token"
+
+
+def test_post_without_a_csrf_token_is_rejected():
+    r = requests.post(f"{BASE}/", data={"q": "hello world"}, timeout=10)
+    assert r.status_code == 400
+    assert "You searched for" not in r.text
 
 
 def test_valid_term_reaches_the_result_page():

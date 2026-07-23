@@ -1,8 +1,10 @@
 import os
 import re
+import secrets
 
 import psycopg2
 from flask import Flask, render_template, request
+from flask_wtf.csrf import CSRFProtect
 
 # Length bounds for the search term.
 MIN_LEN = 3
@@ -17,6 +19,14 @@ MAX_LEN = 50
 SEARCH_RE = re.compile(r"[A-Za-z0-9 ]+")
 
 app = Flask(__name__)
+
+# Signing key for the session that carries the CSRF token. Generated per start
+# when none is supplied, so there is no secret committed to the repository.
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+
+# The search form is a state-changing POST, so it needs CSRF protection.
+# CSRFProtect rejects any POST without a valid token from this session.
+csrf = CSRFProtect(app)
 
 
 def connect():
@@ -76,7 +86,7 @@ def home():
     return render_template("result.html", term=term)
 
 
-@app.route("/healthz")
+@app.route("/healthz", methods=["GET"])
 def healthz():
     return "ok"
 

@@ -22,6 +22,9 @@ module.exports = [
       "no-implied-eval": "error",
       "no-unused-vars": "error",
       "no-undef": "error",
+      // Modern-syntax rules, matching what SonarQube reports.
+      "no-var": "error",
+      "prefer-const": "error",
     },
   },
 ];

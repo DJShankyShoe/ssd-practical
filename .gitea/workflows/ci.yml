@@ -36,16 +36,29 @@ jobs:
       - name: Verify search validation
         run: |
           AUTH="-sk -u admin:2400639@SIT.singaporetech.edu.sg"
+
+          # The form is CSRF protected, so each submission needs a token taken
+          # from the page, sent back on the same cookie session.
+          submit() {
+            jar=$(mktemp)
+            token=$(curl $AUTH -c "$jar" https://127.0.0.1/ \
+              | sed -n 's/.*name="csrf_token" value="\([^"]*\)".*/\1/p')
+            curl $AUTH -b "$jar" -X POST \
+              --data-urlencode "csrf_token=$token" \
+              --data-urlencode "q=$1" https://127.0.0.1/
+          }
+
           # a clean term reaches the result page
-          curl $AUTH -X POST -d 'q=hello world' https://127.0.0.1/ \
-            | grep -q 'You searched for'
+          submit 'hello world' | grep -q 'You searched for'
           # SQL injection and XSS are rejected and stay on the form
           for payload in "' OR 1=1--" "<script>alert(1)</script>"; do
-            curl $AUTH -X POST --data-urlencode "q=$payload" https://127.0.0.1/ \
-              | grep -q 'Invalid input detected'
+            submit "$payload" | grep -q 'Invalid input detected'
           done
           # length bounds
-          curl $AUTH -X POST -d 'q=ab' https://127.0.0.1/ | grep -q '3-50 characters'
+          submit 'ab' | grep -q '3-50 characters'
+          # a post with no CSRF token is refused
+          test "$(curl $AUTH -o /dev/null -w '%{http_code}' \
+            -X POST -d 'q=hello world' https://127.0.0.1/)" = "400"
 
       - name: Verify only validated queries are logged
         run: |

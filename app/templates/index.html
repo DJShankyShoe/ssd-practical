@@ -16,6 +16,8 @@
        validator. The constraint attributes stay as a declarative record of the
        same rules. -->
   <form method="post" action="/" id="search-form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="q">Search term</label>
     <input type="text" name="q" id="q" autocomplete="off"
            required minlength="3" maxlength="50"
            pattern="[A-Za-z0-9 ]+"
