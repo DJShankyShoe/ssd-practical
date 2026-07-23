@@ -17,6 +17,8 @@ services:
     depends_on:
       init:
         condition: service_completed_successfully
+      app:
+        condition: service_started
     ports:
       - "80:80"
       - "443:443"
@@ -24,7 +26,39 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/auth:/etc/nginx/auth:ro
       - ./certs:/etc/nginx/certs:ro
-      - ./html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  # Q4: Flask search application
+  app:
+    build: ./app
+    container_name: ssd-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_NAME=ssd
+      - DB_USER=ssd
+      - DB_PASSWORD=ssdpass
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  # Q4: database storing validated search queries in table "2400639"
+  db:
+    image: postgres:16-alpine
+    container_name: ssd-db
+    environment:
+      - POSTGRES_DB=ssd
+      - POSTGRES_USER=ssd
+      - POSTGRES_PASSWORD=ssdpass
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ssd -d ssd"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   # Q3: local git server
@@ -49,3 +83,4 @@ services:
 
 volumes:
   gitea-data:
+  db-data:

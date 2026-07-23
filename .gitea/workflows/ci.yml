@@ -33,6 +33,26 @@ jobs:
             -u admin:2400639@sit.singaporetech.edu.sg https://127.0.0.1)
           test "$code" = "200"
 
+      - name: Verify search validation
+        run: |
+          AUTH="-sk -u admin:2400639@sit.singaporetech.edu.sg"
+          # a clean term reaches the result page
+          curl $AUTH -X POST -d 'q=hello world' https://127.0.0.1/ \
+            | grep -q 'You searched for'
+          # SQL injection and XSS are rejected and stay on the form
+          for payload in "' OR 1=1--" "<script>alert(1)</script>"; do
+            curl $AUTH -X POST --data-urlencode "q=$payload" https://127.0.0.1/ \
+              | grep -q 'Invalid input detected'
+          done
+          # length bounds
+          curl $AUTH -X POST -d 'q=ab' https://127.0.0.1/ | grep -q '3-50 characters'
+
+      - name: Verify only validated queries are logged
+        run: |
+          rows=$(docker compose exec -T db psql -U ssd -d ssd -tAc \
+            'SELECT count(*) FROM "2400639"')
+          test "$rows" = "1"
+
       - name: Verify Gitea is reachable
         run: curl -sf http://127.0.0.1:3000/api/healthz
 
