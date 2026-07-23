@@ -54,7 +54,15 @@ jobs:
           test "$rows" = "1"
 
       - name: Verify Gitea is reachable
-        run: curl -sf http://127.0.0.1:3000/api/healthz
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3000/api/healthz >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Gitea did not come up in time" >&2
+          exit 1
 
       - name: Tear down
         if: always()
