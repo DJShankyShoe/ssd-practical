@@ -1,0 +1,51 @@
+services:
+  # Q2: generates the self-signed TLS certificate + Q1 basic-auth credentials
+  # on first run so that a plain "docker compose up" works after unzipping.
+  init:
+    image: alpine:3.20
+    container_name: ssd-init
+    volumes:
+      - ./certs:/certs
+      - ./nginx/auth:/auth
+      - ./scripts/init.sh:/init.sh:ro
+    entrypoint: ["/bin/sh", "/init.sh"]
+
+  # Q1 + Q2: web server, HTTP redirects to HTTPS, basic auth admin/<email>
+  web:
+    image: nginx:1.27-alpine
+    container_name: ssd-web
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/auth:/etc/nginx/auth:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  # Q3: local git server
+  gitea:
+    image: gitea/gitea:1.22
+    container_name: ssd-gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=sqlite3
+      - GITEA__server__ROOT_URL=http://127.0.0.1:3000/
+      - GITEA__server__SSH_DOMAIN=127.0.0.1
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__actions__ENABLED=true
+      - GITEA__security__INSTALL_LOCK=true
+    volumes:
+      - gitea-data:/data
+    ports:
+      - "3000:3000"
+      - "2222:22"
+    restart: unless-stopped
+
+volumes:
+  gitea-data:

@@ -1,0 +1,41 @@
+name: SSD CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose config
+
+      - name: Bring the stack up
+        run: docker compose up -d
+
+      - name: Verify web server over HTTPS with basic auth
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sk https://127.0.0.1 >/dev/null; then break; fi
+            sleep 2
+          done
+          # unauthenticated request must be rejected
+          code=$(curl -sk -o /dev/null -w '%{http_code}' https://127.0.0.1)
+          test "$code" = "401"
+          # authenticated request must succeed
+          code=$(curl -sk -o /dev/null -w '%{http_code}' \
+            -u admin:2400639@sit.singaporetech.edu.sg https://127.0.0.1)
+          test "$code" = "200"
+
+      - name: Verify Gitea is reachable
+        run: curl -sf http://127.0.0.1:3000/api/healthz
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
