@@ -47,5 +47,11 @@ def test_term_above_maximum_length_is_rejected():
     assert "3-50 characters" in search("a" * 51).text
 
 
+def test_runs_of_spaces_are_rejected():
+    r = search("hello  world")
+    assert r.status_code == 400
+    assert "Invalid input detected" in r.text
+
+
 def test_empty_term_is_rejected():
     assert "Please enter a search term" in search("").text

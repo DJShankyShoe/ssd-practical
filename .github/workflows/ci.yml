@@ -39,6 +39,24 @@ jobs:
           # scan does not trip the secret scanner on it.
           skip-dirs: certs
 
+  # Q6: ESLint security scanning over the browser-side JavaScript.
+  eslint-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ESLint and the security plugin
+        run: npm ci
+
+      - name: Run ESLint security scan
+        # --max-warnings 0 so a security warning fails the pipeline rather
+        # than scrolling past in the log.
+        run: npx eslint app/static/js --max-warnings 0
+
   # Q5: integration testing - the app, nginx and the database together.
   integration:
     runs-on: ubuntu-latest

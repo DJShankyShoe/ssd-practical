@@ -1,0 +1,13 @@
+{
+  "name": "ssd-practical",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ESLint security scanning for the search application's frontend code",
+  "scripts": {
+    "lint": "eslint app/static/js"
+  },
+  "devDependencies": {
+    "eslint": "^9.15.0",
+    "eslint-plugin-security": "^3.0.1"
+  }
+}

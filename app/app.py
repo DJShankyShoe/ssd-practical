@@ -12,8 +12,9 @@ MAX_LEN = 50
 # expected, rather than trying to blocklist known attack strings. A search term
 # only ever needs letters, digits and single spaces, so anything else (quotes,
 # angle brackets, semicolons, parentheses) is rejected. That removes the
-# character set both SQL injection and XSS depend on.
-SEARCH_RE = re.compile(r"[A-Za-z0-9]+( [A-Za-z0-9]+)*")
+# character set both SQL injection and XSS depend on. A single quantifier, no
+# nesting, so matching is linear and cannot be used for a ReDoS.
+SEARCH_RE = re.compile(r"[A-Za-z0-9 ]+")
 
 app = Flask(__name__)
 
@@ -54,7 +55,7 @@ def validate(term):
         return "Please enter a search term."
     if len(term) < MIN_LEN or len(term) > MAX_LEN:
         return f"Search term must be {MIN_LEN}-{MAX_LEN} characters."
-    if not SEARCH_RE.fullmatch(term):
+    if not SEARCH_RE.fullmatch(term) or "  " in term:
         return "Invalid input detected. Letters, digits and single spaces only."
     return None
 
