@@ -110,6 +110,18 @@ services:
       - "9000:9000"
     restart: unless-stopped
 
+  # Q7: applies the required admin password on first start, since SonarQube's
+  # data volume is not part of the project folder.
+  sonar-seed:
+    image: alpine:3.20
+    container_name: ssd-sonar-seed
+    depends_on:
+      - sonarqube
+    volumes:
+      - ./scripts/sonar-seed.sh:/sonar-seed.sh:ro
+    entrypoint: ["/bin/sh", "/sonar-seed.sh"]
+    restart: "no"
+
 volumes:
   gitea-data:
   db-data:
