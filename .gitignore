@@ -1,3 +1,7 @@
 # Generated at runtime by the init service - never commit secrets/keys
 certs/
 nginx/auth/
+
+# Local working notes, not part of the deliverable
+instructions.txt
+README.md
