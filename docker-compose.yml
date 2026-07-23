@@ -81,6 +81,25 @@ services:
       - "2222:22"
     restart: unless-stopped
 
+  # Q7: SonarQube code quality / security server on http://127.0.0.1:9000
+  sonarqube:
+    image: sonarqube:community
+    container_name: ssd-sonarqube
+    environment:
+      # Docker Desktop does not always meet Elasticsearch's vm.max_map_count
+      # bootstrap check; this keeps a plain "docker compose up" working.
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonar-data:/opt/sonarqube/data
+      - sonar-extensions:/opt/sonarqube/extensions
+      - sonar-logs:/opt/sonarqube/logs
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
+
 volumes:
   gitea-data:
   db-data:
+  sonar-data:
+  sonar-extensions:
+  sonar-logs:
