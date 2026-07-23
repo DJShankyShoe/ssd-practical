@@ -41,9 +41,12 @@ Git identity configured for this repo:
 - name: `Gangaraju Shashank`
 - email: `2400639@sit.singaporetech.edu.sg`
 
-Gitea login (`admin` is a reserved name in Gitea, so the account is `shashank`):
+Gitea login. Gitea usernames cannot contain spaces (and `admin` is reserved),
+so the login handle is `shashank` and the displayed full name is the required
+`Gangaraju Shashank`:
 
 - username: `shashank`
+- full name: `Gangaraju Shashank`
 - password: `2400639@sit.singaporetech.edu.sg`
 
 This repo is pushed to `http://127.0.0.1:3000/shashank/ssd-practical.git`.
@@ -56,6 +59,11 @@ Note: the Gitea account lives in the `gitea-data` volume, so after a
 docker compose exec -u git gitea gitea admin user create \
   --username shashank --password '2400639@sit.singaporetech.edu.sg' \
   --email '2400639@sit.singaporetech.edu.sg' --admin --must-change-password=false
+
+curl -s -X PATCH \
+  "http://shashank:2400639%40sit.singaporetech.edu.sg@127.0.0.1:3000/api/v1/admin/users/shashank" \
+  -H "Content-Type: application/json" \
+  -d '{"login_name":"shashank","source_id":0,"full_name":"Gangaraju Shashank","email":"2400639@sit.singaporetech.edu.sg"}'
 ```
 
 ## Actions workflow
