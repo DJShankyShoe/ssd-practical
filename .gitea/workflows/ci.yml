@@ -30,12 +30,12 @@ jobs:
           test "$code" = "401"
           # authenticated request must succeed
           code=$(curl -sk -o /dev/null -w '%{http_code}' \
-            -u admin:2400639@sit.singaporetech.edu.sg https://127.0.0.1)
+            -u admin:2400639@SIT.singaporetech.edu.sg https://127.0.0.1)
           test "$code" = "200"
 
       - name: Verify search validation
         run: |
-          AUTH="-sk -u admin:2400639@sit.singaporetech.edu.sg"
+          AUTH="-sk -u admin:2400639@SIT.singaporetech.edu.sg"
           # a clean term reaches the result page
           curl $AUTH -X POST -d 'q=hello world' https://127.0.0.1/ \
             | grep -q 'You searched for'

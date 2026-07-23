@@ -20,7 +20,7 @@ fi
 
 if [ ! -f /auth/.htpasswd ]; then
   echo "[init] creating basic-auth user 'admin'"
-  htpasswd -cbB /auth/.htpasswd admin '2400639@sit.singaporetech.edu.sg'
+  htpasswd -cbB /auth/.htpasswd admin '2400639@SIT.singaporetech.edu.sg'
   chmod 644 /auth/.htpasswd
 else
   echo "[init] .htpasswd already present, skipping"

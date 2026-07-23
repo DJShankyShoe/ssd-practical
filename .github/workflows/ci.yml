@@ -90,7 +90,7 @@ jobs:
         run: |
           test "$(curl -sk -o /dev/null -w '%{http_code}' https://127.0.0.1)" = "401"
           test "$(curl -sk -o /dev/null -w '%{http_code}' \
-            -u admin:2400639@sit.singaporetech.edu.sg https://127.0.0.1)" = "200"
+            -u admin:2400639@SIT.singaporetech.edu.sg https://127.0.0.1)" = "200"
 
       - name: Verify only validated queries are logged to table 2400639
         run: |
