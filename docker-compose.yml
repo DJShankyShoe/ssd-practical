@@ -81,6 +81,19 @@ services:
       - "2222:22"
     restart: unless-stopped
 
+  # Q3: publishes the bundled git history into Gitea on first start, so the
+  # repository and its commits are there after a plain "docker compose up".
+  gitea-seed:
+    image: alpine:3.20
+    container_name: ssd-gitea-seed
+    depends_on:
+      - gitea
+    volumes:
+      - ./scripts/gitea-seed.sh:/gitea-seed.sh:ro
+      - ./.git:/repo:ro
+    entrypoint: ["/bin/sh", "/gitea-seed.sh"]
+    restart: "no"
+
   # Q7: SonarQube code quality / security server on http://127.0.0.1:9000
   sonarqube:
     image: sonarqube:community
